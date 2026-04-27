@@ -14,12 +14,13 @@ client = genai.Client(api_key=api_key)
 
 print("API KEY loaded successfully.")
 
-response = client.models.generate_content(
+response = client.models.generate_content_stream(
     model="gemini-2.5-flash",
-    contents = "What is my name?",
+    contents = "Tell me a story",
     config = types.GenerateContentConfig(
         system_instruction= "The user's name is Ansel",
         thinking_config=types.ThinkingConfig(thinking_budget=0)
     ),
 )
-print(response.text)
+for chunk in response:
+    print(chunk.text, end= "")
