@@ -1,26 +1,73 @@
-from google import genai
-from google.genai import types
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
+from RealtimeSTT import AudioToTextRecorder
 
-load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY")
+def main():
+    load_dotenv()
 
-if not api_key:
-    raise ValueError("GEMINI_API_KEY is not set in the environment variables.")
+    api_key = os.getenv("GROQ_API_KEY")
 
-client = genai.Client(api_key=api_key)
+    if not api_key:
+        raise ValueError("GROQ_API_KEY is not set in the environment variables.")
 
-print("API KEY loaded successfully.")
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.groq.com/openai/v1"
+    )
 
-response = client.models.generate_content_stream(
-    model="gemini-2.5-flash",
-    contents = "Tell me a story",
-    config = types.GenerateContentConfig(
-        system_instruction= "The user's name is Ansel",
-        thinking_config=types.ThinkingConfig(thinking_budget=0)
-    ),
-)
-for chunk in response:
-    print(chunk.text, end= "")
+    print("API KEY loaded successfully.")
+
+    messages = [
+        {
+            "role": "system",
+            "content": "The user's name is Ansel. Your name is Timothy."
+        }
+    ]
+
+    recorder = AudioToTextRecorder(model="tiny.en", language="en", spinner=False)
+
+    try:
+        while True:
+            print("You: ", end="", flush=True)
+            user_input = recorder.text()
+            print(user_input)
+
+            if user_input.lower() == "exit":
+                print("Exiting Timothy...")
+                break
+
+            print("Timothy: ", end="", flush=True)
+
+            messages.append({"role": "user", "content": user_input})
+
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                stream=True
+            )
+
+            assistant_reply = ""
+
+            for chunk in response:
+                delta = chunk.choices[0].delta
+                if delta and delta.content:
+                    print(delta.content, end="", flush=True)
+                    assistant_reply += delta.content
+
+            print()
+            messages.append({"role": "assistant", "content": assistant_reply})
+
+    except Exception as e:
+        print(f"\n[Error] {e}")
+        print("Timothy is shutting down.")
+
+    finally:
+        print("Cleaning up...")
+        recorder.shutdown()
+        print("Timothy offline.")
+
+
+if __name__ == "__main__":
+    main()
