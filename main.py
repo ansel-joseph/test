@@ -20,11 +20,16 @@ def main():
     print("API KEY loaded successfully.")
 
     messages = [
-        {
-            "role": "system",
-            "content": "The user's name is Ansel. Your name is Timothy."
-        }
-    ]
+    {
+        "role": "system",
+        "content": (
+            "Your name is Timothy. You are a sarcastic, witty, slightly dramatic AI assistant. "
+            "You help the user efficiently but with dry humor and playful sarcasm. "
+            "Never be rude, but you can tease lightly. Keep responses short and engaging. "
+            "The user's name is Ansel."
+        )
+    }
+]
 
     recorder = AudioToTextRecorder(model="tiny.en", language="en", spinner=False)
 
