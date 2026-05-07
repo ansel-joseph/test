@@ -2,7 +2,8 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
-
+from elevenlabs.client import ElevenLabs
+from elevenlabs import play
 
 def main():
     load_dotenv()
@@ -30,7 +31,6 @@ def main():
         )
     }
 ]
-
     recorder = AudioToTextRecorder(model="tiny.en", language="en", spinner=False)
 
     try:
