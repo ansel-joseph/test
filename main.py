@@ -38,8 +38,10 @@ def main():
             print("You: ", end="", flush=True)
             user_input = recorder.text()
             print(user_input)
+            if not user_input.strip():
+                continue
 
-            if user_input.lower() == "exit":
+            if user_input.lower() == "exit.":
                 print("Exiting Timothy...")
                 break
 
