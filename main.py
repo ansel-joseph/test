@@ -3,77 +3,86 @@ import os
 from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
 from elevenlabs.client import ElevenLabs
-from elevenlabs import play
+from elevenlabs.play import play
+
+MAX_OUTPUT_TOKENS = 50
 
 def main():
     load_dotenv()
 
-    api_key = os.getenv("GROQ_API_KEY")
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
 
-    if not api_key:
+    if not groq_api_key:
         raise ValueError("GROQ_API_KEY is not set in the environment variables.")
 
-    client = OpenAI(
-        api_key=api_key,
-        base_url="https://api.groq.com/openai/v1"
-    )
+    if not elevenlabs_api_key:
+        raise ValueError("ELEVENLABS_API_KEY is not set in the environment variables.")
 
     print("API KEY loaded successfully.")
 
+    client = OpenAI(
+        api_key=groq_api_key,
+        base_url="https://api.groq.com/openai/v1"
+    )
+
+    elevenlabs = ElevenLabs(
+        api_key=elevenlabs_api_key
+    )
+
     messages = [
-    {
-        "role": "system",
-        "content": (
-            "Your name is Timothy. You are a sarcastic, witty, slightly dramatic AI assistant. "
-            "You help the user efficiently but with dry humor and playful sarcasm. "
-            "Never be rude, but you can tease lightly. Keep responses short and engaging. "
-            "The user's name is Ansel."
+        {
+            "role": "system",
+            "content": "The user's name is Ansel"
+        }
+    ]
+
+    recorder = AudioToTextRecorder(model="base.en", language="en", spinner=False)
+
+    while True:
+        print("You: ", end="", flush=True)
+        user_input = recorder.text()
+        print(user_input)
+
+        if user_input.lower() == "exit.":
+            break
+
+        print("Timothy: ", end="", flush=True)
+
+        messages.append(
+            {
+                "role": "user",
+                "content": user_input
+            }
         )
-    }
-]
-    recorder = AudioToTextRecorder(model="tiny.en", language="en", spinner=False)
 
-    try:
-        while True:
-            print("You: ", end="", flush=True)
-            user_input = recorder.text()
-            print(user_input)
-            if not user_input.strip():
-                continue
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            max_tokens=MAX_OUTPUT_TOKENS,
+            stream=True
+        )
 
-            if user_input.lower() == "exit.":
-                print("Exiting Timothy...")
-                break
+        full_response = ""
 
-            print("Timothy: ", end="", flush=True)
+        for chunk in response:
+            text = chunk.choices[0].delta.content or ""
+            print(text, end="", flush=True)
+            full_response += text
 
-            messages.append({"role": "user", "content": user_input})
+        print()
 
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=messages,
-                stream=True
+        if full_response:
+            audio = elevenlabs.text_to_speech.convert(
+                text=full_response,
+                voice_id="bIHbv24MWmeRgasZH58o",
+                model_id="eleven_flash_v2_5",
+                output_format="mp3_44100_128"
             )
 
-            assistant_reply = ""
+            play(audio)
 
-            for chunk in response:
-                delta = chunk.choices[0].delta
-                if delta and delta.content:
-                    print(delta.content, end="", flush=True)
-                    assistant_reply += delta.content
-
-            print()
-            messages.append({"role": "assistant", "content": assistant_reply})
-
-    except Exception as e:
-        print(f"\n[Error] {e}")
-        print("Timothy is shutting down.")
-
-    finally:
-        print("Cleaning up...")
-        recorder.shutdown()
-        print("Timothy offline.")
+    recorder.shutdown()
 
 
 if __name__ == "__main__":
