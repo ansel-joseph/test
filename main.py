@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
 from elevenlabs.client import ElevenLabs
 from elevenlabs.play import play
+from commands import execute_command
 
 MAX_OUTPUT_TOKENS = 50
 
@@ -46,6 +47,12 @@ def main():
 
         if user_input.lower() == "exit.":
             break
+
+        command_response = execute_command(user_input)
+
+        if command_response:
+            print("Timothy:", command_response)
+            continue
 
         print("Timothy: ", end="", flush=True)
 
