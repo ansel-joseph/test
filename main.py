@@ -38,10 +38,15 @@ def main():
         }
     ]
 
-    recorder = AudioToTextRecorder(model="base.en", language="en", spinner=False)
+    recorder = AudioToTextRecorder(
+        model="tiny.en",
+        language="en",
+        spinner=False
+    )
 
     while True:
         print("You: ", end="", flush=True)
+
         user_input = recorder.text()
         print(user_input)
 
@@ -52,6 +57,15 @@ def main():
 
         if command_response:
             print("Timothy:", command_response)
+
+            audio = elevenlabs.text_to_speech.convert(
+                text=command_response,
+                voice_id="bIHbv24MWmeRgasZH58o",
+                model_id="eleven_flash_v2_5",
+                output_format="mp3_44100_128"
+            )
+
+            play(audio)
             continue
 
         print("Timothy: ", end="", flush=True)
